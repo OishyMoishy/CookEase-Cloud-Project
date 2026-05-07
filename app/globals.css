@@ -12,6 +12,6 @@ body {
   font-family: sans-serif;
 }
 
-/* This replaces the old 'content' array in the config file */
+/* Tells Tailwind where your code is located */
 @source "../app";
 @source "../components";

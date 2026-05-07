@@ -1,8 +1,10 @@
 "use client";
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function SignupPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -10,92 +12,70 @@ export default function SignupPage() {
     confirmPassword: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Logic check before calling .NET Backend
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const ngrok_site="https://radiance-anyway-dumpster.ngrok-free.dev"
+  const response = await fetch(ngrok_site+"/api/users", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      fullName: formData.fullName,
+      email: formData.email,
+      passwordHash: formData.password // Password should be hashed before sending or on backend
+    })
+  });
 
-    console.log("Sending to .NET API:", formData);
-    // Future step: fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, ...)
-  };
+  if (response.ok) {
+    router.push('/login');
+  } else {
+    alert("Signup failed!");
+  }
+};
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[90vh] px-4">
-      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-gray-100">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-gray-900">Create Account</h2>
-          <p className="text-gray-500 mt-2">Join CookEase to manage your recipes</p>
-        </div>
-
+      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-zinc-100">
+        <h2 className="text-3xl font-black text-center text-zinc-900 mb-8">Create Account</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input 
-              required
-              type="text"
-              placeholder="John Doe"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition"
-              onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input 
-              required
-              type="email"
-              placeholder="name@university.edu"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition"
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input 
-              required
-              type="password"
-              placeholder="••••••••"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition"
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-            <input 
-              required
-              type="password"
-              placeholder="••••••••"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition"
-              onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-            />
-          </div>
-
+          <input 
+            required
+            type="text"
+            placeholder="Full Name"
+            className="w-full p-3 border-2 border-zinc-50 rounded-xl focus:border-orange-500 outline-none text-zinc-900"
+            onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+          />
+          <input 
+            required
+            type="email"
+            placeholder="Email Address"
+            className="w-full p-3 border-2 border-zinc-50 rounded-xl focus:border-orange-500 outline-none text-zinc-900"
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+          />
+          <input 
+            required
+            type="password"
+            placeholder="Password"
+            className="w-full p-3 border-2 border-zinc-50 rounded-xl focus:border-orange-500 outline-none text-zinc-900"
+            onChange={(e) => setFormData({...formData, password: e.target.value})}
+          />
+          <input 
+            required
+            type="password"
+            placeholder="Confirm Password"
+            className="w-full p-3 border-2 border-zinc-50 rounded-xl focus:border-orange-500 outline-none text-zinc-900"
+            onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+          />
           <button 
             type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-orange-200 transition-all transform active:scale-95"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-bold shadow-lg"
           >
             Create My Account
           </button>
         </form>
-
-        <div className="mt-8 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link href="/login" className="text-orange-600 font-bold hover:underline">
-            Log In
-          </Link>
+        <div className="mt-8 text-center text-sm text-zinc-600">
+          Already have an account? <Link href="/login" className="text-orange-600 font-bold">Log In</Link>
         </div>
       </div>
-      
-      {/* Cloud Status Footer */}
-      <p className="mt-6 text-xs text-gray-400">
-        Secured by Managed Cloud Identity Services
-      </p>
     </div>
   );
 }
