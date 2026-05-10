@@ -1,11 +1,22 @@
 "use client";
 import { useState, useMemo, useEffect } from 'react';
 import RecipeCard from '@/components/RecipeCard';
+import { useAuth } from '@/components/AuthContext';
 
 export default function HomePage() {
+  const { user } = useAuth(); // Monitor user state [cite: 401, 403]
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [videoSuggestion, setVideoSuggestion] = useState<any>(null);
+
+  // 1. FIX: Reset local state when the user logs out 
+  useEffect(() => {
+    if (!user) {
+      setIngredients([]);
+      setVideoSuggestion(null);
+      setInput("");
+    }
+  }, [user]);
 
   const allRecipes = [
     { id: 1, title: "Spicy Pasta", servings: 2, image: "🍝", tags: ["pasta", "tomato", "spicy"] },
@@ -13,17 +24,16 @@ export default function HomePage() {
     { id: 3, title: "Beef Burger", servings: 1, image: "🍔", tags: ["beef", "bread", "burger"] },
   ];
 
-  // Logic to fetch YouTube video when ingredients change
+  // Logic for YouTube fetch [cite: 172-173]
   useEffect(() => {
     if (ingredients.length > 0) {
       const fetchVideo = async () => {
         const ngrok_site = "https://radiance-anyway-dumpster.ngrok-free.dev";
         try {
-          // Sending the first ingredient as a search query to the backend
           const res = await fetch(`${ngrok_site}/api/youtube/suggest?query=${ingredients[0]}`);
           if (res.ok) {
             const data = await res.json();
-            setVideoSuggestion(data); // Expecting { title, videoId, thumbnail }
+            setVideoSuggestion(data);
           }
         } catch (error) {
           console.error("YouTube fetch error:", error);
@@ -38,17 +48,21 @@ export default function HomePage() {
   const addIngredient = () => {
     const val = input.trim().toLowerCase();
     if (val && !ingredients.includes(val)) {
-      setIngredients(prev => [...prev, val]);
+      setIngredients(prev => [...prev, val]); // Ensure state updates correctly [cite: 292-298]
       setInput("");
     }
+  };
+
+  const removeIngredient = (index: number) => {
+    setIngredients(prev => prev.filter((_, i) => i !== index)); // Use prev state for safety [cite: 302-304]
   };
 
   const filteredRecipes = useMemo(() => {
     if (ingredients.length === 0) return allRecipes;
     return allRecipes.filter(recipe => 
-      ingredients.every(ing => 
-        recipe.title.toLowerCase().includes(ing) || 
-        recipe.tags.some(tag => tag.toLowerCase().includes(ing))
+      ingredients.every(searchIng => 
+        recipe.title.toLowerCase().includes(searchIng) || 
+        recipe.tags.some(tag => tag.toLowerCase().includes(searchIng))
       )
     );
   }, [ingredients]);
@@ -67,45 +81,47 @@ export default function HomePage() {
           />
           <button onClick={addIngredient} className="bg-orange-500 text-white px-8 rounded-2xl font-bold">Add</button>
         </div>
+
+        {/* 2. FIX: Chip display logic - Ensure mapping works on current state [cite: 339-350] */}
+        <div className="flex flex-wrap justify-center gap-2 mt-6">
+          {ingredients.map((ing, i) => (
+            <button 
+              key={`${ing}-${i}`} 
+              onClick={() => removeIngredient(i)}
+              className="bg-orange-50 text-orange-700 px-4 py-1.5 rounded-full text-sm font-bold border border-orange-100 flex items-center gap-2 hover:bg-orange-100 transition"
+            >
+              {ing} <span className="text-orange-300">×</span>
+            </button>
+          ))}
+        </div>
       </header>
 
-      {/* Main Content Area: Split Grid */}
       <div className="flex flex-col lg:flex-row gap-8">
-        
-        {/* Left Side: Recipe Grid (2/3 width) */}
         <section className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredRecipes.map(recipe => (
             <RecipeCard key={recipe.id} recipe={recipe} />
           ))}
         </section>
 
-        {/* Right Side: YouTube Suggestion (1/3 width) */}
         <aside className="w-full lg:w-80 space-y-6">
           <div className="bg-zinc-50 p-6 rounded-3xl border border-zinc-100 sticky top-24">
             <h2 className="text-xl font-black text-zinc-900 mb-4 flex items-center gap-2">
               <span className="text-red-600">▶</span> Video Suggestion
             </h2>
-            
             {videoSuggestion ? (
               <div className="space-y-3">
                 <div className="aspect-video bg-zinc-200 rounded-xl overflow-hidden">
                    <iframe
-                    width="100%"
-                    height="100%"
+                    width="100%" height="100%"
                     src={`https://www.youtube.com/embed/${videoSuggestion.videoId}`}
-                    title="YouTube video player"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    title="YouTube video player" frameBorder="0"
                     allowFullScreen
                   ></iframe>
                 </div>
                 <h3 className="font-bold text-zinc-800 leading-tight">{videoSuggestion.title}</h3>
-                <p className="text-xs text-zinc-500">Based on your search for "{ingredients[0]}"</p>
               </div>
             ) : (
-              <p className="text-sm text-zinc-400 italic">
-                Add an ingredient to see a relevant cooking tutorial.
-              </p>
+              <p className="text-sm text-zinc-400 italic">Add an ingredient to see a tutorial.</p>
             )}
           </div>
         </aside>
