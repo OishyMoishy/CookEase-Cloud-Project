@@ -2,20 +2,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
-  id: string;
+  id: string;   // We will keep this as 'id' for the frontend but map 'userId' to it
   name: string;
   email: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string) => void;
+  login: (apiResponse: any) => void; 
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Use a default export to prevent "undefined" errors during import
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
@@ -26,8 +25,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  const login = (email: string) => {
-    const newUser = { id: '1', name: email.split('@')[0], email };
+  const login = (apiResponse: any) => {
+    // MAPPING: Take the 'userId' from the API and save it as 'id'
+    const newUser = {
+      id: apiResponse.userId.toString(), 
+      name: apiResponse.message.replace("Welcome back, ", "").replace("!", ""),
+      email: apiResponse.email || "" 
+    };
     setUser(newUser);
     localStorage.setItem('cookease_user', JSON.stringify(newUser));
   };
